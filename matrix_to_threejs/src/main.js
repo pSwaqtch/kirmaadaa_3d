@@ -69,7 +69,7 @@ function renderBalls(scene, slices) {
   // Create 24 grids of balls with corresponding planes
   for (let i = 0; i < 24; i++) {
     const group = new THREE.Group(); // Group to hold balls and plane
-    group.rotation.y = THREE.MathUtils.degToRad(i * 15);
+    group.rotation.y = THREE.MathUtils.degToRad(i * 7.5);
 
     // Add balls in a grid pattern
     for (let row = 0; row < rows; row++) {
@@ -140,7 +140,7 @@ function renderBalls(scene, slices) {
       });
 
       // Display the tooltip
-      tooltipText.textContent = sliceNumber;
+      tooltipText.textContent = sliceNumber + 1;
       tooltip.style.left = `${event.clientX + 10}px`; // Position tooltip near the mouse
       tooltip.style.top = `${event.clientY + 10}px`;
       tooltip.style.display = "block";
