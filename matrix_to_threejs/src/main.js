@@ -77,7 +77,7 @@ function renderBalls(scene, slices) {
         if (slices[i][row][col] === 1) continue; // Skip if the value is 1
         const ball = new THREE.Mesh(ballGeometry, ballMaterial.clone()); // Use a unique material
         ball.position.x = (col - (cols - 1) / 2) * spacing;
-        ball.position.y = (row - (rows - 1) / 2) * spacing;
+        ball.position.y = -(row - (rows - 1) / 2) * spacing;
         group.add(ball);
       }
     }
@@ -153,7 +153,7 @@ function renderBalls(scene, slices) {
 // Main function to initialize the scene and load the data
 async function main() {
   // Load the slice data
-  const cubeData = await loadSliceData("wieframe_cube_mtx.txt");
+  const cubeData = await loadSliceData("wireframe_plus_180_mtx.txt");
 
   // Render the balls based on the data
   renderBalls(scene, cubeData);
@@ -175,6 +175,30 @@ async function main() {
     controls.update();
     renderer.render(scene, camera);
   }
+
+  // add xyz axes both for positive and negative directions
+  const axesHelper = new THREE.AxesHelper(5);
+  const axesHelperI = new THREE.AxesHelper(-5);
+  scene.add(axesHelper, axesHelperI);
+
+  function addLabel(text, position) {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    context.font = "20px Arial";
+    context.fillStyle = "white";
+    context.fillText(text, 0, 20);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.position.set(position.x, position.y, position.z);
+    scene.add(sprite);
+  }
+
+  addLabel("X+", { x: 6, y: 0, z: 0 });
+  addLabel("Y+", { x: 0, y: 6, z: 0 });
+  addLabel("Z+", { x: 0, y: 0, z: 6 });
+
   animate();
 }
 
