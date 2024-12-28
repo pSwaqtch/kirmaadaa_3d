@@ -44,7 +44,7 @@ function init(cubeData) {
 }
 
 // Function to render balls based on the cube data
-function renderBalls(scene, slices) {
+function renderBalls(scene, frameData) {
   const ballRadius = 0.1; // Adjust the radius of the balls as needed
   const ballGeometry = new THREE.SphereGeometry(ballRadius, 16, 16);
   const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Red color
@@ -64,7 +64,7 @@ function renderBalls(scene, slices) {
     // Add balls in a grid pattern
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        if (slices[i][row][col] === 1) continue; // Skip if the value is 1
+        if (frameData[i][row][col] === 1) continue; // Skip if the value is 1
         const ball = new THREE.Mesh(ballGeometry, ballMaterial.clone()); // Use a unique material
         ball.position.x = (col - (cols - 1) / 2) * spacing;
         ball.position.y = -(row - (rows - 1) / 2) * spacing;

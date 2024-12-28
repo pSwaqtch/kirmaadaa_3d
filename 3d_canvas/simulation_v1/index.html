@@ -64,11 +64,23 @@
                 </div>
                 <canvas id="canvas"></canvas>
             </div>
-            <div class="interactions">
-                <div class="border">haha</div>
-                <div class="border">haha</div>
+            <div class="interactions" id="interactions">
+                <div class="upload-section">
+                    <h1>Upload JSON File</h1>
+                    <form>
+                        <input type="file" id="jsonFile" accept="application/json">
+                    </form>
+                </div>
+    
+                <h2>Frame Names</h2>
+                <div id="frameButtons" class="frame-buttons">
+                    <div class="initial-message">No frames available yet.</div>
+                </div>
             </div>
         </div>
+        <div id="popup" class="popup"></div>
+
+
         <script type="module" src="src/main.js"></script>
     </body>
 </html>

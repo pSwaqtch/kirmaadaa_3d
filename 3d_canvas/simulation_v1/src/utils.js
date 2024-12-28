@@ -70,6 +70,99 @@ function hexToMatrix(hexData) {
   return matrix;
 }
 
+
+// JavaScript remains the same as in the previous version
+const jsonFileInput = document.getElementById('jsonFile');
+const frameButtonsContainer = document.getElementById('frameButtons');
+const frameDataContainer = document.getElementById('canvas');
+const popup = document.getElementById('popup');
+
+let frames = [];
+let frameStates = new Map();
+
+function showPopup(message) {
+    popup.textContent = message;
+    popup.style.display = 'block';
+    setTimeout(() => {
+        popup.style.display = 'none';
+    }, 3000);
+}
+
+function toggleFrameData(index, button) {
+    const frameDiv = document.getElementById(`frameData-${index}`);
+    const isVisible = frameStates.get(index);
+    
+    if (isVisible) {
+        frameDiv.classList.remove('visible');
+        button.classList.remove('highlighted-button');
+        frameStates.set(index, false);
+        showPopup(`Frame ${index + 1} hidden`);
+    } else {
+        frameDiv.classList.add('visible');
+        button.classList.add('highlighted-button');
+        frameStates.set(index, true);
+        showPopup(`Frame ${index + 1} shown`);
+    }
+}
+
+function createFrameElements(frames) {
+    frameButtonsContainer.innerHTML = '';
+    frameDataContainer.innerHTML = '';
+    frameStates.clear();
+
+    frames.forEach((frameData, index) => {
+        // Create button
+        const button = document.createElement('button');
+        button.textContent = `Frame ${index + 1}`;
+        button.className = 'frame-button';
+        button.onclick = () => toggleFrameData(index, button);
+        frameButtonsContainer.appendChild(button);
+
+        // Create frame data container
+        const frameDiv = document.createElement('div');
+        frameDiv.id = `frameData-${index}`;
+        frameDiv.className = 'frame-data';
+        frameDiv.innerHTML = `<strong>Frame ${index + 1} Data:</strong><pre>${JSON.stringify(frameData, null, 2)}</pre>`;
+        frameDataContainer.appendChild(frameDiv);
+        frameStates.set(index, false);
+    });
+}
+
+jsonFileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+        frameButtonsContainer.innerHTML = '<div class="initial-message">No frames available yet.</div>';
+        frameDataContainer.innerHTML = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const jsonContent = JSON.parse(e.target.result);
+            
+            frames = jsonContent.sort((a, b) => a.index - b.index).map(frame => 
+                frame.map(value => {
+                    if (typeof value === 'string' && /^[0-9A-Fa-f]+$/.test(value)) {
+                        return parseInt(value, 16);
+                    }
+                    return value;
+                })
+            );
+
+            createFrameElements(frames);
+            showPopup('JSON file loaded successfully!');
+        } catch (error) {
+            frameDataContainer.innerHTML = 'Error: Invalid JSON file.';
+            showPopup('Error: Invalid JSON file');
+        }
+    };
+
+    reader.readAsText(file);
+});
+
+
+
 function exportToCSV(data, filename) {
   // Helper function to flatten an n-dimensional array
   function flattenArray(arr) {
