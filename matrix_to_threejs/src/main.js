@@ -52,6 +52,49 @@ async function loadSliceData(url) {
   return slices;
 }
 
+// Function to load slice data from a json file
+async function loadSliceDataFromJSON(url) {
+  // console.log(url);
+  // print the data in json file, the url is the path to the json file
+  const response = await fetch(url);
+  const framedata = await response.json();
+  // console.log(framedata);
+
+  framedata.forEach((row, index) => {
+    console.log(`Matrix ${index + 1}:`);
+    // console.log(row);
+    const matrix = hexToMatrix(row);
+    console.log(matrix);
+  });
+
+  return framedata;
+}
+
+function hexToMatrix(hexData) {
+  // Convert a set of hexadecimal rows into an 8x8 binary matrix.
+  // console.log(hexData);
+  const width = 8;
+  const height = 8;
+
+  // Initialize a matrix with zeros
+  const matrix = Array.from({ length: height }, () => Array(width).fill(0));
+
+  // Convert each word in the hexData to binary and map it to the matrix
+  hexData.forEach((word, x) => {
+    // convert th estingc to hex
+    //
+    word = parseInt(word, 16);
+
+    for (let y = 0; y < height; y++) {
+      // Extract the bit corresponding to the position
+      const bit = (word >> (y + 8)) & 1; // Shift right by (y + 8) to get the correct bit
+      matrix[y][x] = bit;
+    }
+  });
+
+  return matrix;
+}
+
 // Function to render balls based on the cube data
 // Function to render balls based on the cube data
 function renderBalls(scene, slices) {
@@ -150,13 +193,56 @@ function renderBalls(scene, slices) {
   });
 }
 
+function exportToCSV(data, filename) {
+  // Helper function to flatten an n-dimensional array
+  function flattenArray(arr) {
+    const result = [];
+    function recursiveFlatten(subArray) {
+      if (Array.isArray(subArray)) {
+        subArray.forEach((item) => recursiveFlatten(item));
+      } else {
+        result.push(subArray);
+      }
+    }
+    recursiveFlatten(arr);
+    return result;
+  }
+
+  // Flatten the n-dimensional array into a 1D array
+  const flattenedData = flattenArray(data);
+
+  // Create CSV content
+  const csvContent = flattenedData.join(",\n");
+
+  // Create a Blob for the CSV file
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+  // Create a link to trigger the download
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename || "data.csv");
+  document.body.appendChild(link);
+  link.click();
+
+  // Clean up
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 // Main function to initialize the scene and load the data
 async function main() {
   // Load the slice data
   const cubeData = await loadSliceData("wireframe_plus_180_mtx.txt");
 
+  // const cubeDataJSON = await loadSliceDataFromJSON("framedata.json");
+
   // Render the balls based on the data
   renderBalls(scene, cubeData);
+
+  // export both the cubeData and cubeDataJSON to a csv
+  // exportToCSV(cubeData, "cubeData.csv");
+  // exportToCSV(cubeDataJSON, "cubeDataJSON.csv");
 
   // Add a light for better visualization
   const ambientLight = new THREE.AmbientLight(0xffffff, 1);
