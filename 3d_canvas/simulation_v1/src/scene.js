@@ -86,8 +86,9 @@ function renderBalls(scene, frameData, frameStates, frameGroups) {
 
   // Add event listener for mouse movement
   document.addEventListener("mousemove", (event) => {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    const canvasRect = canvas.getBoundingClientRect(); // Get canvas position and size
+    mouse.x = ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
+    mouse.y = -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
 
     // Reset all planes and balls
@@ -101,8 +102,6 @@ function renderBalls(scene, frameData, frameStates, frameGroups) {
         });
       }
     });
-
-    const visiblePlanes = planes.filter(({ group }) => group.visible);
 
     // Check for intersections
     const intersects = raycaster.intersectObjects(
@@ -128,8 +127,8 @@ function renderBalls(scene, frameData, frameStates, frameGroups) {
 
       // Display the tooltip
       tooltipText.textContent = sliceNumber + 1;
-      tooltip.style.left = `${event.clientX + 10}px`; // Position tooltip near the mouse
-      tooltip.style.top = `${event.clientY + 10}px`;
+      tooltip.style.left = `${event.clientX}px`; // Position tooltip near the mouse
+      tooltip.style.top = `${event.clientY}px`;
       tooltip.style.display = "block";
     } else {
       tooltip.style.display = "none"; // Hide tooltip if not over a plane
