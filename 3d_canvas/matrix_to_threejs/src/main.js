@@ -65,6 +65,7 @@ async function loadSliceDataFromJSON(url) {
     // console.log(row);
     const matrix = hexToMatrix(row);
     console.log(matrix);
+    framedata[index] = matrix;
   });
 
   return framedata;
@@ -108,11 +109,28 @@ function renderBalls(scene, slices) {
   const rows = 8; // Number of rows
   const cols = 8; // Number of columns
   const spacing = 1; // Spacing between balls
+  const offset = (spacing * Math.sqrt(3)) / 2; // Vertical offset for hexagonal grid
 
   // Create 24 grids of balls with corresponding planes
   for (let i = 0; i < 24; i++) {
     const group = new THREE.Group(); // Group to hold balls and plane
-    group.rotation.y = THREE.MathUtils.degToRad(i * 7.5);
+    group.rotation.y = THREE.MathUtils.degToRad((i + 1) * 7.5);
+
+    // Add balls in a hexagonal grid pattern
+    // for (let row = 0; row < rows; row++) {
+    //   for (let col = 0; col < cols - (row % 2); col++) {
+    //     if (slices[i][row][col] === 8) continue; // Skip if the value is 1
+
+    //     const ball = new THREE.Mesh(ballGeometry, ballMaterial.clone()); // Use a unique material
+
+    //     // Adjust positions for hexagonal pattern
+    //     ball.position.x =
+    //       (col - (cols - 1) / 2) * spacing + (row % 2 === 0 ? 0 : spacing / 2); // Alternate offset for rows
+    //     ball.position.y = -(row - (rows - 1) / 2) * offset;
+
+    //     group.add(ball);
+    //   }
+    // }
 
     // Add balls in a grid pattern
     for (let row = 0; row < rows; row++) {
@@ -126,7 +144,7 @@ function renderBalls(scene, slices) {
     }
 
     // Create the plane
-    const planeGeometry = new THREE.PlaneGeometry(8, 8);
+    const planeGeometry = new THREE.PlaneGeometry(rows, cols);
     const planeMaterial = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       side: THREE.DoubleSide,
@@ -233,9 +251,14 @@ function exportToCSV(data, filename) {
 // Main function to initialize the scene and load the data
 async function main() {
   // Load the slice data
-  const cubeData = await loadSliceData("wireframe_plus_180_mtx.txt");
+  // const cubeData = await loadSliceData("wireframe_plus_180_mtx.txt");
 
-  // const cubeDataJSON = await loadSliceDataFromJSON("framedata.json");
+  const cubeData = await loadSliceDataFromJSON("framedata_plus.json");
+
+  // create a 3d array of size [24][11][11] all 0 s
+  // const cubeData = Array.from({ length: 24 }, () =>
+  //   Array.from({ length: 8 }, () => Array(8).fill(0)),
+  // );
 
   // Render the balls based on the data
   renderBalls(scene, cubeData);
