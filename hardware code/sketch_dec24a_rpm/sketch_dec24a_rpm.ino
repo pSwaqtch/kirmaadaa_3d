@@ -6,7 +6,7 @@
 #define DEBUG_SERIAL(x) do { if(DEBUG) { Serial.println(x); } } while(0)
 
 // Pin definitions - Changed to D5
-#define IR_PIN D8  // GPIO14 (D5 on NodeMCU)
+#define IR_PIN D3  // GPIO14 (D5 on NodeMCU)
 
 ESP8266WebServer server(80);
 

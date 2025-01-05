@@ -7,8 +7,8 @@
 #define DEBUG_SERIAL(x) do { if(DEBUG) { Serial.println(x); } } while(0)
 
 // Define Wi-Fi credentials
-const char* ssid = "21:02:44";
-const char* password = "";
+const char* ssid = "lifeline_2.4GHz";
+const char* password = "dwarkesh@501";
 
 // Pin definitions
 #define DIN_PIN 14   // Data IN

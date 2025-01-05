@@ -14,17 +14,17 @@ WebSocketsServer webSocket(81);
 // ESC control
 Servo esc;
 const int escPin = D1; // PWM pin connected to the ESC signal wire
-int currentSpeed = 1500; // Current speed in µs
-int targetSpeed = 1500;  // Target speed in µs
+int currentSpeed = 1000; // Current speed in µs
+int targetSpeed = 1000;  // Target speed in µs
 const int speedStep = 10; // Step size for smooth transitions
 const int stepDelay = 50; // Delay (ms) between each step
 
 // IR sensor for RPM measurement
-#define IR_PIN D5  // GPIO14 (D5 on NodeMCU)
+#define IR_PIN D3  // GPIO14 (D5 on NodeMCU)
 volatile unsigned long count = 0;
 unsigned long lastMillis = 0;
 int rpm = 0;
-int divisor = 1;
+int divisor = 2;
 
 // Webpage as a string
 const char* webpage = R"rawliteral(
@@ -43,8 +43,8 @@ const char* webpage = R"rawliteral(
 <body>
   <h1>ESC Speed Control & RPM</h1>
   <p>Use the slider below to control the motor speed:</p>
-  <input type="range" id="slider" min="1000" max="2000" value="1500">
-  <p>Current Speed: <span id="speedValue">1500</span> µs</p>
+  <input type="range" id="slider" min="1000" max="2000" value="1000">
+  <p>Current Speed: <span id="speedValue">1000</span> µs</p>
   <p>Current RPM: <span id="rpmValue">0</span></p>
   <script>
     const slider = document.getElementById('slider');
