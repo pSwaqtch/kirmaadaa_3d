@@ -1,14 +1,32 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <LedControl.h>
+#include <espnow.h>
 
 // Debug macro to enable/disable debug print
 #define DEBUG 1
 #define DEBUG_SERIAL(x) do { if(DEBUG) { Serial.println(x); } } while(0)
 
 // Define Wi-Fi credentials
-const char* ssid = "lifeline_2.4GHz";
-const char* password = "dwarkesh@501";
+const char* ssid = "21:02:44";
+const char* password = "";
+
+// Replace with the MAC Address of the other ESP8266
+uint8_t peerMAC[] = {0xD8, 0xF1, 0x5B, 0x10, 0x7C, 0x42};
+
+// Define a structure to hold the message
+typedef struct message_t {
+  bool ledMatrix[8][8];  // 8x8 LED matrix states
+  int counter;           // keep the counter for debugging
+} message_t;
+
+message_t outgoingMessage;
+message_t incomingMessage;
+
+// 2D array to keep track of LED states
+bool ledStates[8][8] = {false};
+
+
 
 // Pin definitions
 #define DIN_PIN 14   // Data IN
@@ -21,8 +39,30 @@ LedControl lc = LedControl(DIN_PIN, CLK_PIN, CS_PIN, 1); // 1 device connected
 // Initialize the web server on port 80
 ESP8266WebServer server(80);
 
-// 2D array to keep track of LED states
-bool ledStates[8][8] = {false};
+// Callback when data is sent
+void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
+  Serial.print("Data Send Status: ");
+  if (sendStatus == 0) {
+    Serial.println("Success");
+  } else {
+    Serial.println("Fail");
+  }
+}
+
+void OnDataRecv(uint8_t *mac, uint8_t *incomingData, uint8_t len) {
+  memcpy(&incomingMessage, incomingData, sizeof(incomingMessage));
+  
+  // Update the LED matrix with received states
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      ledStates[row][col] = incomingMessage.ledMatrix[row][col];
+      lc.setLed(0, row, col, ledStates[row][col]);
+    }
+  }
+  
+  Serial.println("Received LED matrix states:");
+  printLedMatrix();
+}
 
 // Function to perform a startup blink sequence
 void blinkMatrix() {
@@ -119,15 +159,64 @@ void setup() {
     applyPattern(pattern);
     server.send(200, "text/plain", "Pattern applied: " + pattern);
   });
+
+  server.on("/data", HTTP_GET, sendDataESP);
   
   server.begin();
   DEBUG_SERIAL("Web Server Started Successfully");
+
+  WiFi.mode(WIFI_STA);
+  
+  // Print the MAC Address of the device
+  Serial.print("ESP8266 MAC Address: ");
+  Serial.println(WiFi.macAddress());
+  
+  // Initialize ESP-NOW
+  if (esp_now_init() != 0) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+  
+  // Register the send callback
+  esp_now_register_send_cb(OnDataSent);
+  
+  // Register the receive callback
+  esp_now_register_recv_cb(OnDataRecv);
+  
+  // Add the peer
+  esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
+  esp_now_add_peer(peerMAC, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
 
 }
 
 void loop() {
   // Handle web requests
   server.handleClient();
+}
+
+// Third fix - Update the sendDataESP function:
+void sendDataESP() {
+  // Copy current LED states to the outgoing message
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      outgoingMessage.ledMatrix[row][col] = ledStates[row][col];
+    }
+  }
+  
+  outgoingMessage.counter = millis() / 1000;
+  
+  // Send the message
+  uint8_t result = esp_now_send(peerMAC, (uint8_t *) &outgoingMessage, sizeof(outgoingMessage));
+  
+  if (result == 0) {
+    String jsonResponse = createJsonResponse();
+    Serial.println("Message sent successfully");
+    Serial.println(jsonResponse);
+    server.send(200, "application/json", jsonResponse);
+  } else {
+    Serial.println("Error sending message");
+    server.send(500, "text/plain", "Error sending ESP-NOW message");
+  }
 }
 
 // Debug endpoint to get system information
@@ -165,6 +254,24 @@ void handleBrightness() {
     DEBUG_SERIAL("No brightness level provided");
     server.send(400, "text/plain", "Missing brightness level");
   }
+}
+
+// Function to create JSON response
+String createJsonResponse() {
+  String json = "{\"ledMatrix\":[";
+  
+  for (int row = 0; row < 8; row++) {
+    json += "[";
+    for (int col = 0; col < 8; col++) {
+      json += ledStates[row][col] ? "1" : "0";
+      if (col < 7) json += ",";
+    }
+    json += "]";
+    if (row < 7) json += ",";
+  }
+  
+  json += "],\"counter\":" + String(outgoingMessage.counter) + "}";
+  return json;
 }
 
 // Function to serve the homepage with interactive SVG matrix
@@ -213,6 +320,7 @@ html += R"(
         <button onclick='applyPattern("checkerboard")'>Checkerboard</button>
         <button onclick='applyPattern("diagonal")'>Diagonal</button>
         <button onclick='applyPattern("border")'>Border</button>
+        <button onclick='sendData()'>Send Data</button>
     </div>
     <br><br>
     <label for='brightnessSlider'>Brightness: </label>
@@ -221,7 +329,26 @@ html += R"(
     <div id='brightnessInfo'></div>
     <div id='debugInfo'></div>
     <script>
-    
+        
+
+
+// Update the JavaScript function to handle JSON response
+function sendData() {
+    fetch('/data')
+        .then(response => response.json())
+        .then(result => {
+            console.log("Data sent successfully:", result);
+            // Update debug info with formatted JSON
+            document.getElementById('debugInfo').innerHTML = 
+                '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+        })
+        .catch(err => {
+            console.error("Error sending data: ", err);
+            document.getElementById('debugInfo').innerHTML = 
+                '<pre>Error sending data: ' + err.message + '</pre>';
+        });
+}
+
         function adjustBrightness() {
             const slider = document.getElementById('brightnessSlider');
             const valueDisplay = document.getElementById('brightnessValue');
@@ -336,15 +463,18 @@ void handleToggle() {
 }
 
 void applyPattern(const String &pattern) {
-  lc.clearDisplay(0);
+  handleClear();
   for (int row = 0; row < 8; row++) {
     for (int col = 0; col < 8; col++) {
       if (pattern == "checkerboard" && (row + col) % 2 == 0) {
         lc.setLed(0, row, col, true);
+        ledStates[row][col] = 1;
       } else if (pattern == "diagonal" && row == col) {
         lc.setLed(0, row, col, true);
+        ledStates[row][col] = 1;
       } else if (pattern == "border" && (row == 0 || row == 7 || col == 0 || col == 7)) {
         lc.setLed(0, row, col, true);
+        ledStates[row][col] = 1;
       }
     }
   }
@@ -365,5 +495,15 @@ void handleClear() {
   }
   
   server.send(200, "text/plain", "Matrix Cleared");
+}
+
+// Helper function to print LED matrix states
+void printLedMatrix() {
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      Serial.print(ledStates[row][col] ? "1 " : "0 ");
+    }
+    Serial.println();
+  }
 }
 
