@@ -21,10 +21,19 @@ const int stepDelay = 50; // Delay (ms) between each step
 
 // IR sensor for RPM measurement
 #define IR_PIN 18  // GPIO pin for IR sensor (update as per your wiring)
-volatile unsigned long count = 0;
-unsigned long lastMillis = 0;
-int rpm = 0;
-int divisor = 2;
+volatile unsigned long irCount = 0;
+unsigned long lastIrMillis = 0;
+int irRpm = 0;
+int irDivisor = 2;  // Adjust this based on the number of pulses per rotation for IR sensor
+
+// Hall sensor for RPM measurement
+#define HALL_PIN 5  // GPIO pin for Hall sensor (update as per your wiring)
+#define HALL_DEBOUNCE_DELAY 10 // Debounce delay for Hall sensor in milliseconds
+volatile unsigned long lastHallPulseTime = 0; // To track the time of the last pulse
+volatile unsigned long hallCount = 0;
+unsigned long lastHallMillis = 0;
+int hallRpm = 0;
+int hallDivisor = 2;  // Adjust this based on the number of pulses per rotation for Hall sensor
 
 // Webpage as a string
 const char* webpage = R"rawliteral(
@@ -36,7 +45,7 @@ const char* webpage = R"rawliteral(
   <title>ESC Speed & RPM</title>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-    #speedValue, #rpmValue { font-size: 1.5em; margin: 10px; }
+    #speedValue, #irRpmValue, #hallRpmValue { font-size: 1.5em; margin: 10px; }
     #slider { width: 80%; max-width: 300px; }
   </style>
 </head>
@@ -45,11 +54,13 @@ const char* webpage = R"rawliteral(
   <p>Use the slider below to control the motor speed:</p>
   <input type="range" id="slider" min="1000" max="2000" value="1000">
   <p>Current Speed: <span id="speedValue">1000</span> µs</p>
-  <p>Current RPM: <span id="rpmValue">0</span></p>
+  <p>IR Sensor RPM: <span id="irRpmValue">0</span></p>
+  <p>Hall Sensor RPM: <span id="hallRpmValue">0</span></p>
   <script>
     const slider = document.getElementById('slider');
     const speedValue = document.getElementById('speedValue');
-    const rpmValue = document.getElementById('rpmValue');
+    const irRpmValue = document.getElementById('irRpmValue');
+    const hallRpmValue = document.getElementById('hallRpmValue');
     const ws = new WebSocket('ws://' + location.host + ':81');
 
     slider.addEventListener('input', () => {
@@ -63,17 +74,31 @@ const char* webpage = R"rawliteral(
 
     setInterval(() => {
       fetch('/rpm')
-        .then(response => response.text())
-        .then(data => rpmValue.textContent = data);
+        .then(response => response.json())
+        .then(data => {
+          irRpmValue.textContent = data.irRpm;
+          hallRpmValue.textContent = data.hallRpm;
+        });
     }, 1000);
   </script>
 </body>
 </html>
 )rawliteral";
 
-// ISR for RPM calculation
-void IRAM_ATTR countWhiteStripe() {
-  count++;
+// ISR for IR sensor RPM calculation
+void IRAM_ATTR countIrPulse() {
+  irCount++;
+}
+
+// ISR for Hall sensor RPM calculation with debounce
+void IRAM_ATTR countHallPulse() {
+  unsigned long currentTime = millis();
+  
+  // Check if the time between pulses is greater than debounce delay
+  if (currentTime - lastHallPulseTime > HALL_DEBOUNCE_DELAY) {
+    hallCount++; // Increment the pulse count for Hall sensor
+    lastHallPulseTime = currentTime; // Update the last pulse time
+  }
 }
 
 void setup() {
@@ -107,7 +132,10 @@ void setup() {
 
   // Web server setup
   server.on("/", []() { server.send(200, "text/html", webpage); });
-  server.on("/rpm", []() { server.send(200, "text/plain", String(rpm)); });
+  server.on("/rpm", []() {
+    String jsonData = "{\"irRpm\":" + String(irRpm) + ",\"hallRpm\":" + String(hallRpm) + "}";
+    server.send(200, "application/json", jsonData);
+  });
   server.begin();
   webSocket.begin();
 
@@ -120,9 +148,14 @@ void setup() {
   });
 
   // IR sensor setup
-  Serial.print("\n\nESP8266 RPM Measurer");
+  Serial.println("IR Sensor RPM Measurer");
   pinMode(IR_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(IR_PIN), countWhiteStripe, FALLING);
+  attachInterrupt(digitalPinToInterrupt(IR_PIN), countIrPulse, FALLING);
+
+  // Hall sensor setup
+  Serial.println("Hall Sensor RPM Measurer");
+  pinMode(HALL_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(HALL_PIN), countHallPulse, FALLING);
 }
 
 void smoothSpeedTransition() {
@@ -145,13 +178,23 @@ void loop() {
     delay(stepDelay);
   }
 
-  // RPM calculation
-  if (millis() - lastMillis >= 1000) {
+  // RPM calculation for IR sensor
+  if (millis() - lastIrMillis >= 1000) {
     noInterrupts();
-    rpm = (count * 60) / divisor;
-    count = 0;
+    irRpm = (irCount * 60) / irDivisor;
+    irCount = 0;
     interrupts();
-    lastMillis = millis();
-    Serial.printf("Current RPM: %d\n", rpm);
+    lastIrMillis = millis();
+    Serial.printf("IR Sensor RPM: %d\n", irRpm);
+  }
+
+  // RPM calculation for Hall sensor
+  if (millis() - lastHallMillis >= 1000) {
+    noInterrupts();
+    hallRpm = (hallCount * 60) / hallDivisor;
+    hallCount = 0;
+    interrupts();
+    lastHallMillis = millis();
+    Serial.printf("Hall Sensor RPM: %d\n", hallRpm);
   }
 }
