@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Matrix Upload</title>
+    <style>
+        body { max-width: 800px; margin: 20px auto; padding: 20px; font-family: sans-serif; }
+        .error { color: red; }
+        .success { color: green; }
+        pre { background: #f5f5f5; padding: 10px; }
+        .debug { color: blue; }
+    </style>
+</head>
+<body>
+    <h2>3D Matrix Upload</h2>
+    <div>
+        <label>ESP IP:</label>
+        <input type="text" id="ipInput" value="192.168.1.67">
+        <button onclick="testConnection()">Test Connection</button>
+    </div>
+    <br>
+    <div>
+        <input type="file" id="fileInput">
+        <button onclick="processAndSend()">Upload</button>
+    </div>
+    <pre id="status"></pre>
+
+    <script>
+        const status = document.getElementById('status');
+
+        async function testConnection() {
+            const ipAddress = document.getElementById('ipInput').value;
+            const url = `http://${ipAddress}/upload`;
+
+            status.innerHTML = '<span class="debug">Testing connection...</span>';
+
+            try {
+                const response = await fetch(url, {
+                    method: 'OPTIONS',
+                    mode: 'cors'
+                });
+                status.innerHTML = '<span class="success">Connection successful!</span>';
+            } catch (error) {
+                status.innerHTML = `<span class="error">Connection failed: ${error.message}</span>`;
+            }
+        }
+
+        async function processAndSend() {
+            const fileInput = document.getElementById('fileInput');
+            const ipAddress = document.getElementById('ipInput').value;
+            const url = `http://${ipAddress}/upload`;
+
+            if (!fileInput.files.length) {
+                status.innerHTML = '<span class="error">Select a file first</span>';
+                return;
+            }
+
+            try {
+                status.innerHTML = '<span class="debug">Reading file...</span>';
+                const text = await fileInput.files[0].text();
+                const jsonData = JSON.parse(text);
+
+                if (!jsonData.resolution || !jsonData.data) {
+                    throw new Error("Invalid JSON format. Missing 'resolution' or 'data' fields.");
+                }
+
+                const convertedData = convertToBinaryMatrix(jsonData);
+
+                status.innerHTML = '<span class="debug">Sending converted data...</span>';
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': '*/*'
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify(convertedData)
+                });
+
+                const responseText = await response.text();
+                status.innerHTML = `<span class="success">Success: ${responseText}</span>`;
+            } catch (error) {
+                status.innerHTML = `<span class="error">Error: ${error.message}
+                    1. Verify ESP IP address
+                    2. Ensure ESP is powered on
+                    3. Check both devices are on same network
+                    4. Check ESP serial monitor for errors</span>`;
+                console.error(error);
+            }
+        }
+
+        function convertToBinaryMatrix(jsonData) {
+            const { frames, slices, columns, rows } = jsonData.resolution;
+            let convertedData = { resolution: jsonData.resolution, data: [] };
+
+            jsonData.data.forEach((frame, frameIndex) => {
+                let binaryFrame = [];
+                frame.forEach((slice, sliceIndex) => {
+                    let binarySlice = [];
+                    slice.forEach(hexStr => {
+                        let hexValue = parseInt(hexStr, 16); // Convert hex string to number
+                        let binaryArray = [];
+
+                        for (let i = 0; i < 8; i++) {
+                            binaryArray[i] = (hexValue >> (i + 8)) & 1; // Extract bits
+                        }
+
+                        binarySlice.push(binaryArray);
+                    });
+                    binaryFrame.push(binarySlice);
+                });
+                convertedData.data.push(binaryFrame);
+            });
+
+            console.log("Converted Data:", JSON.stringify(convertedData, null, 2));
+            return convertedData;
+        }
+    </script>
+</body>
+</html>
