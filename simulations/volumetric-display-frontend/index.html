@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" type="text/css" href="style.css" />
+        <script type="module" src="main.js"></script>
+
+        <title>Volumetric LED Display</title>
+    </head>
+    <body>
+        <div class="container">
+            <div class="canvas-container">
+                <canvas id="canvas"></canvas>
+            </div>
+            <div class="controls-container">
+                <div class="panel">
+                    <div class="panel-title">Current LEDs</div>
+                    <div class="led-display">
+                        <div>
+                            <div class="led-label">I</div>
+                            <div id="led-front" class="led-panel"></div>
+                        </div>
+                        <div>
+                            <div class="led-label">II</div>
+                            <div id="led-back" class="led-panel"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title">Controls</div>
+                    <div class="controls">
+                        <div class="control-group">
+                            <label>Speed Control</label>
+                            <input
+                                type="range"
+                                id="speed-control"
+                                class="speed-control"
+                                min="1"
+                                max="40"
+                                step="0.1"
+                                value="5.0"
+                            />
+                            <div class="speed-value">
+                                Speed: <span id="speed-value">5.0</span>
+                            </div>
+                            <label>Grid Size</label>
+                            <input
+                                type="range"
+                                id="grid-size-control"
+                                class="grid-size-control"
+                                min="4"
+                                max="18"
+                                step="1"
+                                value="10"
+                            />
+                            <div class="grid-size-value">
+                                Grid: <span id="grid-size-value">10</span>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label>Direction</label>
+                            <div class="button-group">
+                                <button id="btn-cw" class="active">CW</button>
+                                <button id="btn-ccw">CCW</button>
+                            </div>
+                        </div>
+                        <button id="btn-toggle" class="secondary">Play</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
