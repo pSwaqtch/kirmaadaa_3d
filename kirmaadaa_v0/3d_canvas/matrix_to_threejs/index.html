@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Three.js Planes</title>
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+            }
+            canvas {
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="myCanvas"></canvas>
+        <!-- Tooltip Element -->
+        <div
+            id="tooltip"
+            style="
+                position: absolute;
+                background-color: rgba(0, 0, 0, 0.7);
+                color: white;
+                padding: 5px;
+                border-radius: 5px;
+                display: none;
+                pointer-events: none;
+            "
+        >
+            Slice: <span id="tooltip-slice"></span>
+        </div>
+        <script type="module" src="src/main.js"></script>
+    </body>
+</html>

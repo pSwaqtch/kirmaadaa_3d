@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Three.js Planes</title>
+    </head>
+    <body>
+        <div class="container">
+            <div class="canvas-container">
+                <div class="fps"></div>
+                <div
+                    id="tooltip"
+                    style="
+                        position: absolute;
+                        background-color: rgba(0, 0, 0, 0.7);
+                        color: white;
+                        padding: 5px;
+                        border-radius: 5px;
+                        pointer-events: none;
+                    "
+                >
+                    Slice: <span id="tooltip-slice"></span>
+                </div>
+                <canvas id="canvas"></canvas>
+            </div>
+            <div class="interactions" id="interactions">
+                <div class="upload-section">
+                    <h1>Upload JSON File</h1>
+                    <form>
+                        <input type="file" id="jsonFile" accept="application/json">
+                    </form>
+                </div>
+    
+                <h2>Frame Names</h2>
+                <div id="frameButtons" class="frame-buttons">
+                    <div class="initial-message">No frames available yet.</div>
+                </div>
+            </div>
+        </div>
+        <div id="popup" class="popup"></div>
+
+
+        <script type="module" src="src/main.js"></script>
+    </body>
+</html>
