@@ -1,5 +1,4 @@
-// help me make a raw material list
-
+// James Brown's Vortex BOM
 - Raspberry Pi 4
 - Hub75 interface board
 - Photointerrupter
@@ -21,3 +20,23 @@
 - ADXL335 Accelerometer
 - Raspberry Pi Pico W
 - Pololu 24v13 Motor Driver
+
+
+// Mitxela's Tiny Volumetric Display BOM
+- base
+- motor
+- battery holder
+- battery
+- rp2040
+- diode, resitor, wire
+- led matrix
+
+// kirmaadaa v1
+- A2212 1000KV bldc motor with 30A ESC
+- GT2 timing Belt
+- Copper pipes and carbon brushes for custom slip rings
+- AS5600 Encoder
+- ESP32 modules
+- 12V - 5V DC-DC BUCK Converter
+- TLC5958 / MAX7129 LED Driver
+- Custom PCB with SMD5050 LEDs
