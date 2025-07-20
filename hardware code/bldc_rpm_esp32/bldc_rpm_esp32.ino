@@ -133,7 +133,7 @@ void setup() {
   // Web server setup
   server.on("/", []() { server.send(200, "text/html", webpage); });
   server.on("/rpm", []() {
-    String jsonData = "{\"irRpm\":" + String(irRpm) + ",\"hallRpm\":" + String(hallRpm) + "}";
+    String jsonData = "{ \"irRpm\":" + String(irRpm) + ",\"hallRpm\":" + String(hallRpm) + "}";
     server.send(200, "application/json", jsonData);
   });
   server.begin();
